@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { envValidationSchema } from '@app/config/env.validation';
 import { HealthModule } from '@app/health/health.module';
 import { AuthModule } from '@app/auth/auth.module';
+import { InvoicesModule } from '@app/invoices/invoices.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AuthModule } from '@app/auth/auth.module';
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     HealthModule,
     AuthModule,
+    InvoicesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
