@@ -77,6 +77,11 @@ export class InvoicesController {
     return this.invoices.toCsv(invoices);
   }
 
+  @Get('summary')
+  summary(@CurrentUser() user: AuthUser) {
+    return this.invoices.getSummary(user.id);
+  }
+
   @Get(':id')
   findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.invoices.findOne(user.id, id);

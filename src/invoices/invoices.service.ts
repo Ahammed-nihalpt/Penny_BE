@@ -5,6 +5,7 @@ import { Invoice, InvoiceDocument } from '@app/invoices/schemas/invoice.schema';
 import { CreateInvoiceDto } from '@app/invoices/dto/create-invoice.dto';
 import { UpdateInvoiceDto } from '@app/invoices/dto/update-invoice.dto';
 import { QueryInvoicesDto } from '@app/invoices/dto/query-invoices.dto';
+import { computeSummary, InvoiceSummary } from '@app/invoices/invoice-summary';
 
 @Injectable()
 export class InvoicesService {
@@ -64,6 +65,11 @@ export class InvoicesService {
       .exec();
     if (!invoice) throw new NotFoundException('Invoice not found');
     return invoice;
+  }
+
+  async getSummary(userId: string): Promise<InvoiceSummary> {
+    const invoices = await this.model.find({ userId }).exec();
+    return computeSummary(invoices, new Date());
   }
 
   async remove(userId: string, id: string): Promise<void> {
