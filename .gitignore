@@ -144,6 +144,7 @@ vite.config.ts.timestamp-*
 
 # Penny — local-only files (intentionally not committed)
 CLAUDE.md
+docs/
 
 # Tests (kept local per project preference)
 test/

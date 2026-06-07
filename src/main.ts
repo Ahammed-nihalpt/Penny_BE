@@ -1,10 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 import { AppModule } from '@app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
 
   // All routes are served under /api (matches the FE contract).
   app.setGlobalPrefix('api');
@@ -12,10 +14,12 @@ async function bootstrap() {
   // Reject any request body that doesn't match its DTO; strip unknown fields.
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  // Allow the React dev server (and later, the deployed FE) to call this API.
-  app.enableCors({ origin: true, credentials: true });
+  // Parse cookies (the refresh token rides in an httpOnly cookie).
+  app.use(cookieParser());
 
-  const config = app.get(ConfigService);
+  // Credentialed CORS: the origin MUST be explicit (not '*') for the cookie to work.
+  app.enableCors({ origin: config.getOrThrow<string>('FRONTEND_URL'), credentials: true });
+
   const port = config.get<number>('PORT', 3000);
   await app.listen(port);
 }
