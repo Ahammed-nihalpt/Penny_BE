@@ -31,6 +31,18 @@ export class UsersService {
   linkGoogle(userId: string, googleId: string, picture?: string): Promise<UserDocument | null> {
     const patch: Partial<CreateUserData> = { googleId };
     if (picture) patch.picture = picture;
-    return this.userModel.findByIdAndUpdate(userId, patch, { new: true }).exec();
+    return this.userModel.findByIdAndUpdate(userId, patch, { returnDocument: 'after' }).exec();
+  }
+
+  setPreferredModel(userId: string, preferredModel: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(userId, { preferredModel }, { returnDocument: 'after' })
+      .exec();
+  }
+
+  setPreferredName(userId: string, preferredName: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(userId, { preferredName }, { returnDocument: 'after' })
+      .exec();
   }
 }

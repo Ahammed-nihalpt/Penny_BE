@@ -22,6 +22,12 @@ export class User {
 
   @Prop()
   company?: string;
+
+  @Prop()
+  preferredModel?: string;
+
+  @Prop()
+  preferredName?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

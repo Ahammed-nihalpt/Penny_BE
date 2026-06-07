@@ -1,5 +1,10 @@
 import { Module } from '@nestjs/common';
 import { GeminiService } from '@app/gemini/gemini.service';
+import { UsageModule } from '@app/models/usage.module';
 
-@Module({ providers: [GeminiService], exports: [GeminiService] })
+@Module({
+  imports: [UsageModule],
+  providers: [GeminiService],
+  exports: [GeminiService],
+})
 export class GeminiModule {}

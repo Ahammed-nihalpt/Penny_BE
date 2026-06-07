@@ -11,5 +11,6 @@ export const envValidationSchema = Joi.object({
   FRONTEND_URL: Joi.string().uri().default('http://localhost:5173'),
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   GOOGLE_CLIENT_ID: Joi.string().allow('').optional(), // set to enable Google sign-in
-  GEMINI_API_KEY: Joi.string().allow('').optional(), // required in Part 5 (Vision)
+  GEMINI_API_KEY: Joi.string().allow('').optional(), // required for vision/chat/copilot
+  GEMINI_MODEL: Joi.string().default('gemini-2.5-flash-lite'), // highest free RPD
 });

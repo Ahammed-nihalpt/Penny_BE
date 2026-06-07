@@ -7,6 +7,8 @@ import { envValidationSchema } from '@app/config/env.validation';
 import { HealthModule } from '@app/health/health.module';
 import { AuthModule } from '@app/auth/auth.module';
 import { InvoicesModule } from '@app/invoices/invoices.module';
+import { ChatModule } from '@app/chat/chat.module';
+import { ModelsModule } from '@app/models/models.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { InvoicesModule } from '@app/invoices/invoices.module';
     HealthModule,
     AuthModule,
     InvoicesModule,
+    ChatModule,
+    ModelsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

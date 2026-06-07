@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI, Type } from '@google/genai';
 import { INVOICE_CATEGORIES } from '@app/invoices/invoice-category';
 import type { InvoiceCategory } from '@app/invoices/invoice-category';
+import { UsageService } from '@app/models/usage.service';
 
 export interface InvoiceDraft {
   vendor: string;
@@ -22,9 +23,14 @@ export interface InvoiceDraft {
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
   private readonly client: GoogleGenAI | null;
+  private readonly model: string;
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    private readonly usage: UsageService,
+  ) {
     const apiKey = config.get<string>('GEMINI_API_KEY', '');
+    this.model = config.get<string>('GEMINI_MODEL', 'gemini-2.5-flash-lite');
     this.client = apiKey ? new GoogleGenAI({ apiKey }) : null;
   }
 
@@ -74,13 +80,14 @@ export class GeminiService {
     };
 
     const text = await this.callWithBackoff(async () => {
+      await this.usage.increment(this.model);
       const response = await this.client!.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: this.model,
         contents: [{ text: prompt }, { inlineData: { mimeType, data: buffer.toString('base64') } }],
         config: { responseMimeType: 'application/json', responseSchema: schema },
       });
       return response.text ?? '';
-    });
+    }, this.model);
 
     try {
       const parsed = JSON.parse(text) as Record<string, unknown>;
@@ -92,18 +99,51 @@ export class GeminiService {
     }
   }
 
-  private async callWithBackoff<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+  async chat(
+    messages: { role: 'user' | 'assistant'; content: string }[],
+    userContext?: string,
+  ): Promise<string> {
+    if (!this.client) {
+      throw new ServiceUnavailableException('Chat is not configured (set GEMINI_API_KEY)');
+    }
+    const contents = messages.map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+    const systemInstruction =
+      'You are Penny, a warm, concise assistant inside an invoice-management app ' +
+      'for small-business owners. Remember details the user shares during the chat. ' +
+      'You cannot yet access their invoice data — if asked, say that capability is coming soon.' +
+      (userContext ? ` ${userContext}` : '');
+    return this.callWithBackoff(async () => {
+      const response = await this.client!.models.generateContent({
+        model: this.model,
+        contents,
+        config: { systemInstruction },
+      });
+      return response.text ?? '';
+    });
+  }
+
+  private async callWithBackoff<T>(
+    fn: () => Promise<T>,
+    modelId?: string,
+    retries = 3,
+  ): Promise<T> {
     let delayMs = 1000;
     for (let attempt = 0; ; attempt++) {
       try {
         return await fn();
       } catch (err) {
         const status = (err as { status?: number }).status;
-        if (status === 429 && attempt < retries) {
-          this.logger.warn(`Gemini rate-limited (429) — retrying in ${delayMs}ms`);
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-          delayMs *= 2;
-          continue;
+        if (status === 429) {
+          if (modelId) void this.usage.markRateLimited(modelId);
+          if (attempt < retries) {
+            this.logger.warn(`Gemini rate-limited (429) — retrying in ${delayMs}ms`);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            delayMs *= 2;
+            continue;
+          }
         }
         throw err;
       }

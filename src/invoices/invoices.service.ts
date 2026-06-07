@@ -53,7 +53,7 @@ export class InvoicesService {
     if (dto.dueDate) patch.dueDate = new Date(dto.dueDate);
     if (dto.status === 'paid') patch.paidAt = new Date();
     const invoice = await this.model
-      .findOneAndUpdate({ _id: id, userId }, patch, { new: true })
+      .findOneAndUpdate({ _id: id, userId }, patch, { returnDocument: 'after' })
       .exec();
     if (!invoice) throw new NotFoundException('Invoice not found');
     return invoice;
@@ -61,7 +61,11 @@ export class InvoicesService {
 
   async markPaid(userId: string, id: string): Promise<InvoiceDocument> {
     const invoice = await this.model
-      .findOneAndUpdate({ _id: id, userId }, { status: 'paid', paidAt: new Date() }, { new: true })
+      .findOneAndUpdate(
+        { _id: id, userId },
+        { status: 'paid', paidAt: new Date() },
+        { returnDocument: 'after' },
+      )
       .exec();
     if (!invoice) throw new NotFoundException('Invoice not found');
     return invoice;
