@@ -72,7 +72,7 @@ export class InvoicesService {
   }
 
   toCsv(invoices: Invoice[]): string {
-    const header = ['vendor', 'amount', 'currency', 'category', 'status', 'dueDate'];
+    const header = ['vendor', 'amount', 'category', 'status', 'dueDate'];
     const escape = (s: string): string => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
     const rows = invoices.map((i) => {
       const due =
@@ -80,7 +80,6 @@ export class InvoicesService {
       return [
         escape(i.vendor),
         escape(String(i.amount)),
-        escape(i.currency),
         escape(i.category),
         escape(i.status),
         escape(due),

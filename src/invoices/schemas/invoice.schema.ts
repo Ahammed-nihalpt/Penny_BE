@@ -19,9 +19,6 @@ export class Invoice {
   @Prop({ required: true, min: 0 })
   amount!: number;
 
-  @Prop({ default: 'USD' })
-  currency!: string;
-
   @Prop({ type: String, required: true, enum: INVOICE_CATEGORIES, default: 'Other' })
   category!: InvoiceCategory;
 

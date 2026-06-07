@@ -24,10 +24,6 @@ export class CreateInvoiceDto {
   @Min(0)
   amount!: number;
 
-  @IsOptional()
-  @IsString()
-  currency?: string;
-
   @IsEnum(INVOICE_CATEGORIES)
   category!: InvoiceCategory;
 
