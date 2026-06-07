@@ -1,5 +1,5 @@
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
 import { AppModule } from '@app/app.module';
@@ -22,6 +22,20 @@ async function bootstrap() {
 
   const port = config.get<number>('PORT', 3000);
   await app.listen(port);
+
+  const env = config.get<string>('NODE_ENV', 'development');
+  const frontendUrl = config.getOrThrow<string>('FRONTEND_URL');
+  const googleEnabled = Boolean(config.get<string>('GOOGLE_CLIENT_ID'));
+  const logger = new Logger('Bootstrap');
+  logger.log('============================================================');
+  logger.log('Penny API is running');
+  logger.log(`  - URL:          http://localhost:${port}/api`);
+  logger.log(`  - Health check: http://localhost:${port}/api/health`);
+  logger.log(`  - Environment:  ${env}`);
+  logger.log(`  - CORS origin:  ${frontendUrl}`);
+  logger.log(`  - Database:     MongoDB (db: penny)`);
+  logger.log(`  - Google login: ${googleEnabled ? 'enabled' : 'disabled (set GOOGLE_CLIENT_ID)'}`);
+  logger.log('============================================================');
 }
 
 void bootstrap();
