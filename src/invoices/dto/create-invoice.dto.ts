@@ -17,6 +17,10 @@ export class CreateInvoiceDto {
   vendor!: string;
 
   @IsOptional()
+  @IsString()
+  invoiceNumber?: string;
+
+  @IsOptional()
   @IsEmail()
   email?: string;
 
@@ -33,4 +37,8 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsISO8601()
   issuedDate?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

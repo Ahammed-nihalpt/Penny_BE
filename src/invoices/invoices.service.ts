@@ -51,6 +51,7 @@ export class InvoicesService {
   async update(userId: string, id: string, dto: UpdateInvoiceDto): Promise<InvoiceDocument> {
     const patch: Record<string, unknown> = { ...dto };
     if (dto.dueDate) patch.dueDate = new Date(dto.dueDate);
+    if (dto.issuedDate) patch.issuedDate = new Date(dto.issuedDate);
     if (dto.status === 'paid') patch.paidAt = new Date();
     const invoice = await this.model
       .findOneAndUpdate({ _id: id, userId }, patch, { returnDocument: 'after' })

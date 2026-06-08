@@ -8,7 +8,8 @@ export interface ModelInfo {
 }
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
-  { id: 'gemini-2.5-flash-lite', label: 'Flash-Lite (highest free limit)', dailyLimit: 1000 },
+  { id: 'gemini-2.5-flash-lite', label: 'Flash-Lite 2.5 (highest free limit)', dailyLimit: 1000 },
+  { id: 'gemini-2.0-flash-lite', label: 'Flash-Lite 2.0', dailyLimit: 200 },
   { id: 'gemini-2.0-flash', label: 'Flash 2.0', dailyLimit: 200 },
   { id: 'gemini-2.5-flash', label: 'Flash 2.5', dailyLimit: 20 },
   { id: 'gemini-2.5-pro', label: 'Pro (very low free limit)', dailyLimit: 50 },

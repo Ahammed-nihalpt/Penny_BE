@@ -9,6 +9,7 @@ import { AGENT_SERVICE } from '@app/chat/agent/agent.types';
 import { UsersModule } from '@app/users/users.module';
 import { InvoicesModule } from '@app/invoices/invoices.module';
 import { UsageModule } from '@app/models/usage.module';
+import { ComposioModule } from '@app/composio/composio.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UsageModule } from '@app/models/usage.module';
     UsersModule,
     InvoicesModule,
     UsageModule,
+    ComposioModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, { provide: AGENT_SERVICE, useClass: AgentService }],

@@ -14,6 +14,9 @@ export class Invoice {
   vendor!: string;
 
   @Prop({ trim: true })
+  invoiceNumber?: string;
+
+  @Prop({ trim: true })
   email?: string;
 
   @Prop({ required: true, min: 0 })
@@ -33,6 +36,9 @@ export class Invoice {
 
   @Prop()
   paidAt?: Date;
+
+  @Prop({ trim: true })
+  notes?: string;
 
   @Prop()
   sourceFile?: string;

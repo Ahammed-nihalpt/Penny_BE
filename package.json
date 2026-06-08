@@ -22,6 +22,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@composio/core": "^0.10.0",
     "@google/genai": "^2.8.0",
     "@langchain/core": "^1.1.48",
     "@langchain/google-genai": "^2.1.31",
@@ -40,6 +41,7 @@
     "cookie-parser": "^1.4.7",
     "google-auth-library": "^10.7.0",
     "joi": "^18.2.1",
+    "langchain": "^1.4.4",
     "mongoose": "^9.6.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

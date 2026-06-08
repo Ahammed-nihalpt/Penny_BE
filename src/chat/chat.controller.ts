@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
-import type { Request } from 'express';
+import { Body, Controller, Delete, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '@app/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@app/auth/decorators/current-user.decorator';
 import type { AuthUser } from '@app/auth/strategies/jwt.strategy';
@@ -27,16 +27,39 @@ export class ChatController {
   }
 
   @Post('sessions/:id/messages')
-  send(
+  async send(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
     @Body() dto: SendMessageDto,
     @Req() req: Request,
-  ) {
+    @Res() res: Response,
+  ): Promise<void> {
+    // Stream the reply as Server-Sent Events: `token` frames as the model
+    // generates, then a final `done` frame with the saved message + actions.
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
     // Cancel the agent run if the client disconnects (the Stop button aborts the request).
     const ac = new AbortController();
     req.on('close', () => ac.abort());
-    return this.chat.sendMessage(user.id, id, dto.content, ac.signal);
+
+    const send = (event: string, data: unknown): void => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+
+    try {
+      const result = await this.chat.sendMessage(user.id, id, dto.content, ac.signal, (token) =>
+        send('token', { text: token }),
+      );
+      send('done', result);
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      send('error', { status });
+    } finally {
+      res.end();
+    }
   }
 
   @Delete('sessions/:id')

@@ -45,6 +45,7 @@ export class ChatService {
     sessionId: string,
     content: string,
     signal?: AbortSignal,
+    onToken?: (token: string) => void,
   ): Promise<SendMessageResult> {
     const session = await this.ownSession(userId, sessionId);
     await this.messages.create({ userId, sessionId, role: 'user', content });
@@ -61,12 +62,13 @@ export class ChatService {
       .exec();
     const history = recent.reverse().map((m) => ({ role: m.role, content: m.content }));
 
-    const { reply, actions } = await this.agent.run(userId, history, signal);
+    const { reply, actions } = await this.agent.run(userId, history, signal, onToken);
     const message = await this.messages.create({
       userId,
       sessionId,
       role: 'assistant',
       content: reply,
+      actions,
     });
     return { message, actions };
   }

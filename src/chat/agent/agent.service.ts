@@ -1,11 +1,12 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { createReactAgent } from '@langchain/langgraph/prebuilt';
+import { createAgent } from 'langchain';
 import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages';
 import { InvoicesService } from '@app/invoices/invoices.service';
 import { UsersService } from '@app/users/users.service';
 import { UsageService } from '@app/models/usage.service';
+import { ComposioService } from '@app/composio/composio.service';
 import { buildTools } from '@app/chat/agent/agent-tools';
 import type { AgentAction, AgentResult, IAgentService } from '@app/chat/agent/agent.types';
 
@@ -19,6 +20,7 @@ export class AgentService implements IAgentService {
     private readonly invoices: InvoicesService,
     private readonly users: UsersService,
     private readonly usage: UsageService,
+    private readonly composio: ComposioService,
   ) {
     this.apiKey = config.get<string>('GEMINI_API_KEY', '');
     this.defaultModel = config.get<string>('GEMINI_MODEL', 'gemini-2.5-flash-lite');
@@ -28,12 +30,13 @@ export class AgentService implements IAgentService {
     userId: string,
     history: { role: 'user' | 'assistant'; content: string }[],
     signal?: AbortSignal,
+    onToken?: (token: string) => void,
   ): Promise<AgentResult> {
     if (!this.apiKey) {
       throw new ServiceUnavailableException('Copilot is not configured (set GEMINI_API_KEY)');
     }
     const actions: AgentAction[] = [];
-    const tools = buildTools(userId, this.invoices, this.users, actions);
+    const tools = buildTools(userId, this.invoices, this.users, this.composio, actions);
     const user = await this.users.findById(userId);
     const model = user?.preferredModel ?? this.defaultModel;
     const displayName = user?.preferredName ?? user?.name;
@@ -43,22 +46,48 @@ export class AgentService implements IAgentService {
       'You are Penny, a warm, concise invoice copilot for a small-business owner' +
       (displayName ? ` named ${displayName}` : '') +
       '. Use the tools to answer questions about their invoices and to take actions. ' +
-      'To mark an invoice paid, first call query_invoices to find its id. ' +
+      'To mark an invoice paid or edit it, first call query_invoices to find its id, then use ' +
+      'mark_paid or update_invoice (to change vendor, amount, category, or due date). ' +
+      'You can also delete_invoice, but deletion is permanent: only delete when the user ' +
+      'clearly asks to remove a specific invoice. ' +
+      (this.composio.enabled
+        ? 'You can email the owner a summary of what they owe using email_summary. '
+        : '') +
       'If they ask you to call them a different name, use set_preferred_name to remember it. ' +
       'Confirm any action you took in plain language. ' +
       `Today is ${new Date().toISOString().slice(0, 10)}.`;
 
-    const agent = createReactAgent({ llm, tools, prompt });
+    const agent = createAgent({ model: llm, tools, systemPrompt: prompt });
 
     const messages: BaseMessage[] = history.map((m) =>
       m.role === 'assistant' ? new AIMessage(m.content) : new HumanMessage(m.content),
     );
 
+    const callbacks = [{ handleLLMStart: () => void this.usage.increment(model) }];
+
     try {
-      const result = await agent.invoke(
-        { messages },
-        { signal, callbacks: [{ handleLLMStart: () => void this.usage.increment(model) }] },
-      );
+      if (onToken) {
+        // Stream the reply token-by-token. Only the chat model's own text deltas
+        // are streamed here (tool outputs are separate events), so accumulating
+        // them yields the assistant's prose. Reset on each model turn so the
+        // final reply reflects the last turn (e.g. the answer after a tool call).
+        let reply = '';
+        const events = agent.streamEvents({ messages }, { version: 'v2', signal, callbacks });
+        for await (const ev of events) {
+          if (ev.event === 'on_chat_model_start') {
+            reply = '';
+          } else if (ev.event === 'on_chat_model_stream') {
+            const delta = this.chunkText((ev.data as { chunk?: unknown }).chunk);
+            if (delta) {
+              reply += delta;
+              onToken(delta);
+            }
+          }
+        }
+        return { reply: reply.trim() || 'Done.', actions };
+      }
+
+      const result = await agent.invoke({ messages }, { signal, callbacks });
       // The final message's content may be a string OR an array of content blocks,
       // and a turn that only called a tool can leave it empty — walk back to the
       // last message with real prose, skipping raw JSON tool outputs.
@@ -76,6 +105,19 @@ export class AgentService implements IAgentService {
       }
       throw err;
     }
+  }
+
+  // Like messageText but WITHOUT trimming — streaming deltas must keep the
+  // spaces between tokens, or words would run together.
+  private chunkText(chunk: unknown): string {
+    const content = (chunk as { content?: unknown } | undefined)?.content;
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content
+        .map((part) => (typeof part === 'string' ? part : ((part as { text?: string }).text ?? '')))
+        .join('');
+    }
+    return '';
   }
 
   private messageText(message: BaseMessage): string {

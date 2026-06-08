@@ -12,11 +12,13 @@ import { UsageService } from '@app/models/usage.service';
 
 export interface InvoiceDraft {
   vendor: string;
+  invoiceNumber?: string;
   email?: string;
   amount: number;
   category: InvoiceCategory;
   dueDate: string; // YYYY-MM-DD
   issuedDate?: string;
+  notes?: string;
 }
 
 @Injectable()
@@ -48,13 +50,17 @@ export class GeminiService {
       return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
     };
     const email = str(raw.email);
+    const invoiceNumber = str(raw.invoiceNumber).trim();
+    const notes = str(raw.notes).trim();
     return {
       vendor: str(raw.vendor).trim(),
+      invoiceNumber: invoiceNumber || undefined,
       email: email || undefined,
       amount,
       category,
       dueDate: toDate(raw.dueDate),
       issuedDate: toDate(raw.issuedDate) || undefined,
+      notes: notes || undefined,
     };
   }
 
@@ -65,16 +71,20 @@ export class GeminiService {
     const prompt =
       'You are reading a business invoice. Extract these fields and return JSON only. ' +
       'amount = total amount due as a number; category = the closest of the allowed values; ' +
+      'invoiceNumber = the vendor reference/invoice number if shown; ' +
+      'notes = a short one-line summary of what the invoice is for, if clear; ' +
       'dates as YYYY-MM-DD. If a field is missing, use an empty string (or 0 for amount).';
     const schema = {
       type: Type.OBJECT,
       properties: {
         vendor: { type: Type.STRING },
+        invoiceNumber: { type: Type.STRING },
         email: { type: Type.STRING },
         amount: { type: Type.NUMBER },
         category: { type: Type.STRING, enum: [...INVOICE_CATEGORIES] },
         dueDate: { type: Type.STRING },
         issuedDate: { type: Type.STRING },
+        notes: { type: Type.STRING },
       },
       required: ['vendor', 'amount', 'category', 'dueDate'],
     };

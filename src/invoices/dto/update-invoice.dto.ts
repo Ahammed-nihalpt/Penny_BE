@@ -8,6 +8,10 @@ export class UpdateInvoiceDto {
   vendor?: string;
 
   @IsOptional()
+  @IsString()
+  invoiceNumber?: string;
+
+  @IsOptional()
   @IsEmail()
   email?: string;
 
@@ -23,6 +27,14 @@ export class UpdateInvoiceDto {
   @IsOptional()
   @IsISO8601()
   dueDate?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  issuedDate?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 
   @IsOptional()
   @IsEnum(['open', 'paid'])

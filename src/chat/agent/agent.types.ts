@@ -16,6 +16,9 @@ export interface IAgentService {
     userId: string,
     history: { role: 'user' | 'assistant'; content: string }[],
     signal?: AbortSignal,
+    // When provided, the agent streams the reply token-by-token via this callback
+    // (the final assembled reply is still returned in AgentResult).
+    onToken?: (token: string) => void,
   ): Promise<AgentResult>;
 }
 
