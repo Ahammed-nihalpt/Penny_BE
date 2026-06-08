@@ -1,4 +1,4 @@
-# Penny — Invoice Copilot (Backend)
+# AskPenny — Invoice Copilot (Backend)
 
 > An AI copilot for non‑technical small‑business owners. Snap a photo or PDF of an invoice →
 > Gemini vision extracts it → a live dashboard shows what you owe → a chat copilot named

@@ -8,7 +8,6 @@ export interface CreateUserData {
   email: string;
   passwordHash?: string;
   googleId?: string;
-  picture?: string;
   company?: string;
 }
 
@@ -28,10 +27,10 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
-  linkGoogle(userId: string, googleId: string, picture?: string): Promise<UserDocument | null> {
-    const patch: Partial<CreateUserData> = { googleId };
-    if (picture) patch.picture = picture;
-    return this.userModel.findByIdAndUpdate(userId, patch, { returnDocument: 'after' }).exec();
+  linkGoogle(userId: string, googleId: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(userId, { googleId }, { returnDocument: 'after' })
+      .exec();
   }
 
   setPreferredModel(userId: string, preferredModel: string): Promise<UserDocument | null> {

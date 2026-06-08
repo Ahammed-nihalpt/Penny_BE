@@ -18,9 +18,6 @@ export class User {
   googleId?: string;
 
   @Prop()
-  picture?: string;
-
-  @Prop()
   company?: string;
 
   @Prop()

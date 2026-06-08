@@ -7,7 +7,6 @@ export interface GoogleProfile {
   email: string;
   emailVerified: boolean;
   name: string;
-  picture?: string;
 }
 
 @Injectable()
@@ -34,7 +33,6 @@ export class GoogleVerifierService {
       email: payload.email,
       emailVerified: payload.email_verified ?? false,
       name: payload.name ?? payload.email,
-      picture: payload.picture,
     };
   }
 }

@@ -62,14 +62,13 @@ export class AuthService {
     let user = await this.users.findByEmail(profile.email);
     if (user) {
       if (!user.googleId) {
-        user = (await this.users.linkGoogle(user.id, profile.googleId, profile.picture)) ?? user;
+        user = (await this.users.linkGoogle(user.id, profile.googleId)) ?? user;
       }
     } else {
       user = await this.users.create({
         name: profile.name,
         email: profile.email,
         googleId: profile.googleId,
-        picture: profile.picture,
       });
     }
     return this.issueTokens(user.id, user.email, userAgent);
