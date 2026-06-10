@@ -14,6 +14,11 @@ export class User {
   @Prop()
   passwordHash?: string;
 
+  // Email/password accounts start unverified and must confirm via a magic link.
+  // Existing docs predate this field → `undefined`, treated as unverified.
+  @Prop({ default: false })
+  emailVerified?: boolean;
+
   @Prop()
   googleId?: string;
 

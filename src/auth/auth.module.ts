@@ -9,12 +9,15 @@ import { AuthController } from '@app/auth/auth.controller';
 import { JwtStrategy } from '@app/auth/strategies/jwt.strategy';
 import { RefreshTokensService } from '@app/auth/refresh-tokens.service';
 import { GoogleVerifierService } from '@app/auth/google-verifier.service';
+import { EmailVerifyService } from '@app/auth/email-verify.service';
+import { MailModule } from '@app/mail/mail.module';
 import { RefreshToken, RefreshTokenSchema } from '@app/auth/schemas/refresh-token.schema';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    MailModule,
     MongooseModule.forFeature([{ name: RefreshToken.name, schema: RefreshTokenSchema }]),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -29,6 +32,12 @@ import { RefreshToken, RefreshTokenSchema } from '@app/auth/schemas/refresh-toke
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokensService, GoogleVerifierService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RefreshTokensService,
+    GoogleVerifierService,
+    EmailVerifyService,
+  ],
 })
 export class AuthModule {}

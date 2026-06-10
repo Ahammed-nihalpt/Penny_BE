@@ -9,6 +9,7 @@ export interface CreateUserData {
   passwordHash?: string;
   googleId?: string;
   company?: string;
+  emailVerified?: boolean;
 }
 
 @Injectable()
@@ -28,8 +29,15 @@ export class UsersService {
   }
 
   linkGoogle(userId: string, googleId: string): Promise<UserDocument | null> {
+    // Linking Google implies a Google-verified address → mark verified.
     return this.userModel
-      .findByIdAndUpdate(userId, { googleId }, { returnDocument: 'after' })
+      .findByIdAndUpdate(userId, { googleId, emailVerified: true }, { returnDocument: 'after' })
+      .exec();
+  }
+
+  markEmailVerified(userId: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(userId, { emailVerified: true }, { returnDocument: 'after' })
       .exec();
   }
 

@@ -15,6 +15,8 @@ import { AuthService } from '@app/auth/auth.service';
 import { SignupDto } from '@app/auth/dto/signup.dto';
 import { LoginDto } from '@app/auth/dto/login.dto';
 import { GoogleAuthDto } from '@app/auth/dto/google-auth.dto';
+import { VerifyEmailDto } from '@app/auth/dto/verify-email.dto';
+import { ResendVerificationDto } from '@app/auth/dto/resend-verification.dto';
 import { JwtAuthGuard } from '@app/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@app/auth/decorators/current-user.decorator';
 import type { AuthUser } from '@app/auth/strategies/jwt.strategy';
@@ -30,14 +32,21 @@ export class AuthController {
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('signup')
-  async signup(
-    @Body() dto: SignupDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ accessToken: string }> {
-    const { accessToken, refreshToken } = await this.auth.signup(dto, req.headers['user-agent']);
-    this.setRefreshCookie(res, refreshToken);
-    return { accessToken };
+  signup(@Body() dto: SignupDto): Promise<{ verificationRequired: true }> {
+    // Hard gate: no session issued here — the user must verify first.
+    return this.auth.signup(dto);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('verify-email')
+  verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ verified: true }> {
+    return this.auth.verifyEmail(dto.token);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('resend-verification')
+  resendVerification(@Body() dto: ResendVerificationDto): Promise<{ ok: true }> {
+    return this.auth.resendVerification(dto.email);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })

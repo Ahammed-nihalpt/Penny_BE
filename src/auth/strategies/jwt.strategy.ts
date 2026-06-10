@@ -13,6 +13,7 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  emailVerified: boolean;
 }
 
 @Injectable()
@@ -31,6 +32,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload): Promise<AuthUser> {
     const user = await this.users.findById(payload.sub);
     if (!user) throw new UnauthorizedException();
-    return { id: user.id, email: user.email, name: user.name };
+    return { id: user.id, email: user.email, name: user.name, emailVerified: !!user.emailVerified };
   }
 }
