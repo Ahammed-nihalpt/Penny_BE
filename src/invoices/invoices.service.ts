@@ -72,6 +72,30 @@ export class InvoicesService {
     return invoice;
   }
 
+  // Bulk: mark every OPEN invoice matching the filter as paid. Returns the
+  // invoices that were changed (pre-update snapshot, for names + ids).
+  async markManyPaid(userId: string, query: QueryInvoicesDto): Promise<InvoiceDocument[]> {
+    const filter: Record<string, unknown> = { ...this.buildFilter(userId, query), status: 'open' };
+    const list = await this.model.find(filter as QueryFilter<InvoiceDocument>).exec();
+    if (list.length) {
+      const ids = list.map((i) => i._id);
+      await this.model
+        .updateMany({ _id: { $in: ids } }, { status: 'paid', paidAt: new Date() })
+        .exec();
+    }
+    return list;
+  }
+
+  // Bulk: delete every invoice matching the filter. Returns what was deleted.
+  async removeMany(userId: string, query: QueryInvoicesDto): Promise<InvoiceDocument[]> {
+    const list = await this.model.find(this.buildFilter(userId, query)).exec();
+    if (list.length) {
+      const ids = list.map((i) => i._id);
+      await this.model.deleteMany({ _id: { $in: ids } }).exec();
+    }
+    return list;
+  }
+
   async getSummary(userId: string): Promise<InvoiceSummary> {
     const invoices = await this.model.find({ userId }).exec();
     return computeSummary(invoices, new Date());

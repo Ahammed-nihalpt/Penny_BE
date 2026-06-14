@@ -48,10 +48,15 @@ export class AgentService implements IAgentService {
       '. Use the tools to answer questions about their invoices and to take actions. ' +
       'To mark an invoice paid or edit it, first call query_invoices to find its id, then use ' +
       'mark_paid or update_invoice (to change vendor, amount, category, or due date). ' +
-      'You can also delete_invoice, but deletion is permanent: only delete when the user ' +
-      'clearly asks to remove a specific invoice. ' +
+      'Deletion is permanent, so act only when the user clearly asks to delete. ' +
+      'For a single invoice use delete_invoice. When the user describes a GROUP — e.g. ' +
+      '"delete all paid invoices", "delete everything from Acme", "mark all overdue invoices ' +
+      'paid" — use the bulk tools delete_invoices_bulk or mark_paid_bulk with the matching ' +
+      'filter (all/overdue/due/paid) and optional vendor search. Bulk tools need no ids, so ' +
+      'do NOT ask for an invoice id for a group request — just do it and report the count. ' +
       (this.composio.enabled
-        ? 'You can email the owner a summary of what they owe using email_summary. '
+        ? 'You can email the owner their invoices using email_summary — pass a filter ' +
+          '(overdue, due, or paid) to email just those, or none for the totals summary. '
         : '') +
       'If they ask you to call them a different name, use set_preferred_name to remember it. ' +
       'Confirm any action you took in plain language. ' +
